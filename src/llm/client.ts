@@ -1,9 +1,6 @@
-const LLM_BASE_URL = "http://127.0.0.1:9931/v1";
+import type { ChatMessage } from "../types/llm-types.js";
 
-export interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
+const LLM_BASE_URL = "http://127.0.0.1:9931/v1";
 
 interface ChatCompletionResponse {
   choices: {

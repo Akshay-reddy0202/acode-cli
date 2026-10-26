@@ -1,9 +1,6 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
-
-export interface ListDirectoryInput {
-  directoryPath: string;
-}
+import type { ListDirectoryInput } from "../types/tool-types.js";
 
 export async function listDirectory(
   input: ListDirectoryInput,

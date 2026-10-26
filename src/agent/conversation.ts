@@ -1,4 +1,5 @@
-import { generateResponse, type ChatMessage } from "../llm/client.js";
+import { generateResponse } from "../llm/client.js";
+import type { ChatMessage } from "../types/llm-types.js";
 
 export class Conversation {
   private readonly messages: ChatMessage[] = [

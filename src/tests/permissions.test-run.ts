@@ -1,8 +1,5 @@
-import {
-  authorizeOperation,
-  askForApproval,
-  type PermissionRequest,
-} from "../tools/permissions.js";
+import { authorizeOperation, askForApproval } from "../tools/permissions.js";
+import type { PermissionRequest } from "../types/permission-types.js";
 
 const request: PermissionRequest = {
   toolName: "run_command",

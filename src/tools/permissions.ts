@@ -1,18 +1,11 @@
-import type { PermissionMode } from "../config/permissions.js";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-
-export type ApprovalDecision = "once" | "session" | "deny";
-
-export interface PermissionRequest {
-  toolName: string;
-  description: string;
-  input: unknown;
-}
-
-export interface PermissionContext {
-  requestApproval(request: PermissionRequest): Promise<ApprovalDecision>;
-}
+import type {
+  ApprovalDecision,
+  PermissionContext,
+  PermissionRequest,
+  PermissionMode,
+} from "../types/permission-types.js";
 
 export async function authorizeOperation(
   mode: PermissionMode,

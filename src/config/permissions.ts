@@ -1,4 +1,4 @@
-export type PermissionMode = "allow" | "deny" | "ask";
+import type { PermissionMode } from "../types/permission-types.js";
 
 export const toolPermissions: Record<string, PermissionMode> = {
   list_directory: "ask",
