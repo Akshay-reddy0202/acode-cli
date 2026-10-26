@@ -1,6 +1,6 @@
 const LLM_BASE_URL = "http://127.0.0.1:9931/v1";
 
-interface ChatMessage {
+export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
@@ -11,7 +11,9 @@ interface ChatCompletionResponse {
   }[];
 }
 
-export async function generateResponse(prompt: string): Promise<string> {
+export async function generateResponse(
+  messages: ChatMessage[],
+): Promise<string> {
   const response = await fetch(`${LLM_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -19,12 +21,7 @@ export async function generateResponse(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: "Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      messages,
       temperature: 0.2,
       max_tokens: 200,
     }),

@@ -1,12 +1,15 @@
-import { generateResponse } from "./llm/client.js";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { Conversation } from "./agent/conversation.js";
 
 async function main(): Promise<void> {
   const rl = createInterface({
     input: stdin,
     output: stdout,
   });
+
+  const conversation = new Conversation();
+
   console.log("\n acode-cli");
   console.log("  Local AI coding assistant");
   console.log("  Type /exit to quit.\n");
@@ -27,7 +30,9 @@ async function main(): Promise<void> {
 
       try {
         console.log("\nThinking...\n");
-        const answer = await generateResponse(trimmedPrompt);
+
+        const answer = await conversation.send(trimmedPrompt);
+
         console.log(`AI: ${answer}\n`);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
