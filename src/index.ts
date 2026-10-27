@@ -1,6 +1,8 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-import { Conversation } from "./agent/conversation.js";
+import { runAgent } from "./agent/agent-loop.js";
+import { createToolRegistry } from "./tools/tool-registration.js";
+import { createCliPermissionContext } from "./tools/permissions.js";
 
 async function main(): Promise<void> {
   const rl = createInterface({
@@ -8,11 +10,11 @@ async function main(): Promise<void> {
     output: stdout,
   });
 
-  const conversation = new Conversation();
+  const permissionContext = createCliPermissionContext(rl);
+  const registry = createToolRegistry(process.cwd(), permissionContext);
 
   console.log("\n acode-cli");
   console.log("  Local AI coding assistant");
-  console.log("  Type /exit to quit.\n");
 
   try {
     while (true) {
@@ -24,6 +26,13 @@ async function main(): Promise<void> {
         break;
       }
 
+      if (trimmedPrompt === "/clear") {
+        console.clear();
+        console.log("\n acode-cli");
+        console.log("  Local AI coding assistant");
+        continue;
+      }
+
       if (!trimmedPrompt) {
         continue;
       }
@@ -31,12 +40,11 @@ async function main(): Promise<void> {
       try {
         console.log("\nThinking...\n");
 
-        const answer = await conversation.send(trimmedPrompt);
+        const answer = await runAgent(trimmedPrompt, registry);
 
         console.log(`AI: ${answer}\n`);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
-
         console.error(`Request failed: ${message}\n`);
       }
     }

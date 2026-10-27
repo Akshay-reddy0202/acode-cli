@@ -20,7 +20,7 @@ export async function generateResponse(
       model: "Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M",
       messages,
       temperature: 0.2,
-      max_tokens: 200,
+      max_tokens: 2048,
     }),
   });
 

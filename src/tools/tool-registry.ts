@@ -4,7 +4,7 @@ import type {
   PermissionContext,
   PermissionRequest,
 } from "../types/permission-types.js";
-import { askForApproval, authorizeOperation } from "./permissions.js";
+import { askForApprovalDefault, authorizeOperation } from "./permissions.js";
 
 interface RegisteredTool {
   name: string;
@@ -18,7 +18,7 @@ export class ToolRegistry {
 
   constructor(
     private readonly permissionContext: PermissionContext = {
-      requestApproval: askForApproval,
+      requestApproval: askForApprovalDefault,
     },
   ) {}
 

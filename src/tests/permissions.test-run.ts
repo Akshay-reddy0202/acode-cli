@@ -1,4 +1,4 @@
-import { authorizeOperation, askForApproval } from "../tools/permissions.js";
+import { authorizeOperation, askForApprovalDefault } from "../tools/permissions.js";
 import type { PermissionRequest } from "../types/permission-types.js";
 
 const request: PermissionRequest = {
@@ -9,7 +9,7 @@ const request: PermissionRequest = {
 
 async function main(): Promise<void> {
   const allowed = await authorizeOperation("ask", request, {
-    requestApproval: askForApproval,
+    requestApproval: askForApprovalDefault,
   });
 
   console.log(

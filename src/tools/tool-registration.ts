@@ -1,5 +1,5 @@
 import path from "node:path";
-
+import type { PermissionContext } from "../types/permission-types.js";
 import type {
   ReadFileInput,
   ToolDefinition,
@@ -18,8 +18,9 @@ import { runCommandTool, type CommandResult } from "./run-command.js";
 
 export function createToolRegistry(
   workspaceRoot: string = process.cwd(),
+  permissionContext?: PermissionContext,
 ): ToolRegistry {
-  const registry = new ToolRegistry();
+  const registry = new ToolRegistry(permissionContext);
   const root = path.resolve(workspaceRoot);
 
   const listDirectoryTool: ToolDefinition<{ directoryPath: string }, string[]> =

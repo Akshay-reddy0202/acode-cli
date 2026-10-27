@@ -1,5 +1,8 @@
 import path from "node:path";
-import { authorizeOperation, askForApproval } from "../tools/permissions.js";
+import {
+  authorizeOperation,
+  askForApprovalDefault,
+} from "../tools/permissions.js";
 import { toolPermissions } from "../config/permissions.js";
 import { listDirectory } from "../tools/list-directory.js";
 
@@ -15,7 +18,7 @@ async function main(): Promise<void> {
   const mode = toolPermissions.list_directory ?? "deny";
 
   const allowed = await authorizeOperation(mode, request, {
-    requestApproval: askForApproval,
+    requestApproval: askForApprovalDefault,
   });
 
   if (!allowed) {
