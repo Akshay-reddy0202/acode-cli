@@ -1,4 +1,4 @@
-import { createToolRegistry } from "../tools/register-tools.js";
+import { createToolRegistry } from "../tools/tool-registration.js";
 
 async function main(): Promise<void> {
   const registry = createToolRegistry();
