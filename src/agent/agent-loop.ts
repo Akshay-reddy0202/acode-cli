@@ -133,7 +133,6 @@ export async function runAgent(
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
     const response = await generateResponse(messages);
-    console.log("\n[DEBUG] Raw model response:\n", response);
 
     messages.push({
       role: "assistant",
@@ -161,6 +160,28 @@ export async function runAgent(
 
     if (decision.type === "final") {
       return decision.answer;
+    }
+
+    console.log(`\n🔧 Selected tool: ${decision.name}`);
+    switch (decision.name) {
+      case "read_file":
+        console.log("📂 Reading file...");
+        break;
+      case "list_directory":
+        console.log("📁 Listing directory...");
+        break;
+      case "find_files":
+        console.log("🔎 Finding files...");
+        break;
+      case "write_file":
+        console.log("📝 Writing file...");
+        break;
+      case "edit_file":
+        console.log("✏️ Editing file...");
+        break;
+      case "run_command":
+        console.log("▶ Running command...");
+        break;
     }
 
     try {
