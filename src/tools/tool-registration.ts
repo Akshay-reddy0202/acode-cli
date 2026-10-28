@@ -7,6 +7,8 @@ import type {
   WriteFileInput,
   EditFileInput,
   RunCommandInput,
+  WebSearchInput,
+  FetchWebpageInput,
 } from "../types/tool-types.js";
 import { listDirectory } from "./list-directory.js";
 import { ToolRegistry } from "./tool-registry.js";
@@ -14,6 +16,8 @@ import { readFileTool } from "./read-file.js";
 import { findFiles } from "./find-files.js";
 import { writeFileTool } from "./write-file.js";
 import { editFileTool } from "./edit-file.js";
+import { webSearchTool } from "./web-search.js";
+import { fetchWebpageTool } from "./fetch-webpage.js";
 import { runCommandTool, type CommandResult } from "./run-command.js";
 
 export function createToolRegistry(
@@ -274,12 +278,80 @@ export function createToolRegistry(
     execute: (input) => runCommandTool(input, root),
   };
 
+  const webSearchDefinition: ToolDefinition<WebSearchInput, string> = {
+    name: "web_search",
+    description:
+      "Search the public web for current information, documentation, and relevant sources.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "A concise web search query.",
+        },
+      },
+      required: ["query"],
+      additionalProperties: false,
+    },
+
+    parseInput(input) {
+      if (
+        typeof input !== "object" ||
+        input === null ||
+        !("query" in input) ||
+        typeof input.query !== "string" ||
+        input.query.trim() === ""
+      ) {
+        throw new Error("Invalid input: query must be a non-empty string.");
+      }
+
+      return { query: input.query };
+    },
+
+    execute: (input) => webSearchTool(input),
+  };
+
+  const fetchWebpageDefinition: ToolDefinition<FetchWebpageInput, string> = {
+    name: "fetch_webpage",
+    description:
+      "Fetch and read the text content of a webpage given its URL (e.g., from web_search results or documentation links).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The full http or https URL of the webpage to read.",
+        },
+      },
+      required: ["url"],
+      additionalProperties: false,
+    },
+
+    parseInput(input) {
+      if (
+        typeof input !== "object" ||
+        input === null ||
+        !("url" in input) ||
+        typeof input.url !== "string" ||
+        input.url.trim() === ""
+      ) {
+        throw new Error("Invalid input: url must be a non-empty string.");
+      }
+
+      return { url: input.url };
+    },
+
+    execute: (input) => fetchWebpageTool(input),
+  };
+
   registry.register(listDirectoryTool);
   registry.register(readFileDefinition);
   registry.register(findFilesDefinition);
   registry.register(writeFileDefinition);
   registry.register(editFileDefinition);
   registry.register(runCommandDefinition);
+  registry.register(webSearchDefinition);
+  registry.register(fetchWebpageDefinition);
 
   return registry;
 }

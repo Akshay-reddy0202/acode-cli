@@ -8,4 +8,5 @@ export const toolPermissions: Record<string, PermissionMode> = {
   edit_file: "ask",
   run_command: "ask",
   web_search: "ask",
+  fetch_webpage: "ask",
 };

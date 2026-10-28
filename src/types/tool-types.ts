@@ -45,3 +45,12 @@ export interface EditFileInput {
 export interface RunCommandInput {
   command: string;
 }
+
+export interface WebSearchInput {
+  query: string;
+}
+
+export interface FetchWebpageInput {
+  url: string;
+}
+
