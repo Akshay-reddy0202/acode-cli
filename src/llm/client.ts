@@ -17,7 +17,7 @@ export async function generateResponse(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "Qwen/Qwen2.5-1.5B-Instruct-GGUF:Q4_K_M",
+      model: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF:Q4_K_M",
       messages,
       temperature: 0.2,
       max_tokens: 2048,

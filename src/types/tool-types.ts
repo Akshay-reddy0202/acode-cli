@@ -1,6 +1,20 @@
+export interface ToolInputSchema {
+  type: "object";
+  properties: Record<
+    string,
+    {
+      type: string;
+      description?: string;
+    }
+  >;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
 export interface ToolDefinition<TInput = unknown, TResult = unknown> {
   name: string;
   description: string;
+  inputSchema: ToolInputSchema;
   parseInput(input: unknown): TInput;
   execute(input: TInput): Promise<TResult>;
 }

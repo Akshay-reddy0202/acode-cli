@@ -27,6 +27,18 @@ export function createToolRegistry(
     {
       name: "list_directory",
       description: "List files and directories inside the workspace.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          directoryPath: {
+            type: "string",
+            description:
+              "Path of the directory to list, relative to the workspace root. Use '.' to list the workspace root.",
+          },
+        },
+        required: ["directoryPath"],
+        additionalProperties: false,
+      },
 
       parseInput(input) {
         if (
@@ -47,6 +59,18 @@ export function createToolRegistry(
   const readFileDefinition: ToolDefinition<ReadFileInput, string> = {
     name: "read_file",
     description: "Read a text file inside the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filePath: {
+          type: "string",
+          description:
+            "Path to the file to read, relative to the workspace root.",
+        },
+      },
+      required: ["filePath"],
+      additionalProperties: false,
+    },
     parseInput(input) {
       if (
         typeof input !== "object" ||
@@ -65,6 +89,23 @@ export function createToolRegistry(
   const findFilesDefinition: ToolDefinition<FindFilesInput, string[]> = {
     name: "find_files",
     description: "Find files by name or extension inside the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "string",
+          description:
+            "File name or glob pattern to search for, such as *.ts or *.json.",
+        },
+        directoryPath: {
+          type: "string",
+          description:
+            "Directory to search in, relative to the workspace root. Defaults to the workspace root when omitted.",
+        },
+      },
+      required: ["pattern"],
+      additionalProperties: false,
+    },
 
     parseInput(input) {
       if (typeof input !== "object" || input === null) {
@@ -103,6 +144,21 @@ export function createToolRegistry(
   const writeFileDefinition: ToolDefinition<WriteFileInput, string> = {
     name: "write_file",
     description: "Create or overwrite a text file inside the workspace.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        filePath: {
+          type: "string",
+          description: "Path where the file should be created or overwritten.",
+        },
+        content: {
+          type: "string",
+          description: "Complete text content to write to the file.",
+        },
+      },
+      required: ["filePath", "content"],
+      additionalProperties: false,
+    },
 
     parseInput(input) {
       if (typeof input !== "object" || input === null) {
@@ -133,6 +189,26 @@ export function createToolRegistry(
   const editFileDefinition: ToolDefinition<EditFileInput, string> = {
     name: "edit_file",
     description: "Replace a unique text snippet in an existing workspace file.",
+
+    inputSchema: {
+      type: "object",
+      properties: {
+        filePath: {
+          type: "string",
+          description: "Path to the existing file inside the workspace.",
+        },
+        oldText: {
+          type: "string",
+          description: "Exact, unique text currently present in the file.",
+        },
+        newText: {
+          type: "string",
+          description: "Replacement text to write into the file.",
+        },
+      },
+      required: ["filePath", "oldText", "newText"],
+      additionalProperties: false,
+    },
 
     parseInput(input) {
       if (typeof input !== "object" || input === null) {
@@ -169,7 +245,18 @@ export function createToolRegistry(
     name: "run_command",
     description:
       "Execute a Bash command inside the workspace and return its output.",
-
+    inputSchema: {
+      type: "object",
+      properties: {
+        command: {
+          type: "string",
+          description:
+            "Bash command to execute inside the workspace, such as 'npm test' or 'git status'.",
+        },
+      },
+      required: ["command"],
+      additionalProperties: false,
+    },
     parseInput(input) {
       if (
         typeof input !== "object" ||

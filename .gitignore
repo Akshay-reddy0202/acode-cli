@@ -21,3 +21,6 @@ npm-debug.log*
 # OS and editor files
 .DS_Store
 Thumbs.db
+
+# Local agent testing files
+/agentplayground/

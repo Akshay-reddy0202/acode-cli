@@ -1,14 +1,15 @@
-import type { ToolDefinition } from "../types/tool-types.js";
 import { toolPermissions } from "../config/permissions.js";
 import type {
   PermissionContext,
   PermissionRequest,
 } from "../types/permission-types.js";
 import { askForApprovalDefault, authorizeOperation } from "./permissions.js";
+import type { ToolInputSchema, ToolDefinition } from "../types/tool-types.js";
 
 interface RegisteredTool {
   name: string;
   description: string;
+  inputSchema: ToolInputSchema;
   parseInput(input: unknown): unknown;
   execute(input: unknown): Promise<unknown>;
 }
@@ -30,6 +31,7 @@ export class ToolRegistry {
     this.tools.set(tool.name, {
       name: tool.name,
       description: tool.description,
+      inputSchema: tool.inputSchema,
       parseInput: (input) => tool.parseInput(input),
       execute: (input) => tool.execute(input as TInput),
     });
@@ -70,5 +72,19 @@ export class ToolRegistry {
     }
 
     return tool.execute(input);
+  }
+
+  describeTools(): Array<{
+    name: string;
+    description: string;
+    inputSchema: ToolInputSchema;
+  }> {
+    return [...this.tools.values()].map(
+      ({ name, description, inputSchema }) => ({
+        name,
+        description,
+        inputSchema,
+      }),
+    );
   }
 }

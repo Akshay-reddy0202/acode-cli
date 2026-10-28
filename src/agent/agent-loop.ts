@@ -2,49 +2,7 @@ import type { ChatMessage } from "../types/llm-types.js";
 import { generateResponse } from "../llm/client.js";
 import type { ToolRegistry } from "../tools/tool-registry.js";
 
-const MAX_ITERATIONS = 5;
-
-const SYSTEM_PROMPT = `You are acode, an AI coding assistant with direct terminal access to the user's computer.
-
-CAPABILITIES & AGENCY:
-- You have access to a real Linux/WSL terminal and filesystem.
-- NEVER say "as an AI I cannot access your computer or hardware". Instead, USE YOUR TOOLS to find the answer.
-- For system or hardware questions (RAM, CPU, OS, disk, git status), use "run_command" with standard Linux commands (e.g., free -h, lscpu, uname -a, df -h).
-- The workspace root is "." (current directory). Never ask the user for paths.
-
-### AVAILABLE TOOLS
-1. list_directory: {"directoryPath": "."}
-2. read_file: {"filePath": "README.md"}
-3. find_files: {"pattern": "*.ts", "directoryPath": "src"}
-4. write_file: {"filePath": "example.txt", "content": "Hello"}
-5. edit_file: {"filePath": "example.txt", "oldText": "Hello", "newText": "Hi"}
-6. run_command: {"command": "free -h"} (Executes any Bash command in the terminal)
-
-### RESPONSE PROTOCOL
-Return EXACTLY ONE JSON object per response. No markdown fences.
-
-- To call a tool:
-{"type":"tool_call","name":"TOOL_NAME","input":{...}}
-
-- To give the final answer:
-{"type":"final","answer":"Your answer"}
-
-CRITICAL: Never put raw line breaks inside JSON strings. Use \\n for newlines.
-
-### EXAMPLES
-
-User: What is the RAM of this pc?
-Assistant: {"type":"tool_call","name":"run_command","input":{"command":"free -h"}}
-
-User: Result from tool "run_command": {"stdout":"total used free\\nMem: 15Gi 6.2Gi 5.8Gi"}
-Assistant: {"type":"final","answer":"This PC has 16 GB of RAM (15 GiB total, with approximately 5.8 GiB currently free)."}
-
-User: List all files in the project
-Assistant: {"type":"tool_call","name":"list_directory","input":{"directoryPath":"."}}
-
-User: Hi!
-Assistant: {"type":"final","answer":"Hello! I'm acode. How can I help you with your project or system today?"}
-`;
+const MAX_ITERATIONS = 15;
 
 interface ToolCallResponse {
   type: "tool_call";
@@ -59,6 +17,52 @@ interface FinalResponse {
 
 type AgentResponse = ToolCallResponse | FinalResponse;
 
+function buildSystemPrompt(registry: ToolRegistry): string {
+  const availableTools = registry.describeTools();
+
+  return `You are acode, an AI coding assistant with access to the user's workspace and terminal.
+
+CAPABILITIES AND AGENCY:
+- You can inspect and modify files using your available tools.
+- You can run commands through the run_command tool when it is available.
+- For system or hardware questions, use tools to inspect the actual system rather than guessing.
+- The workspace root is ".". Use paths relative to the workspace root.
+- Only use tools listed in AVAILABLE TOOLS. Never invent a tool.
+- Choose tools based on the user's actual request. Greetings and general questions may be answered directly.
+- If the user asks you to inspect, fix, edit, create, or test a file, you MUST use the available tools. Never ask the user to paste file contents when read_file is available.
+- For a file-fix task, first call read_file on the target file. Then use edit_file or write_file as appropriate, and run_command to verify the result.
+- Do not return a final answer for a file-fix task until you have attempted the required tool operations.
+- Read a file before editing it when you need to understand its current contents.
+- For an edit, use the exact existing text as oldText and the intended replacement as newText.
+- After editing code, run an appropriate verification command when possible.
+- Use tool results as evidence. Never claim an operation succeeded unless the tool confirms it.
+- If a tool fails, inspect the error and decide whether another tool call can resolve it.
+- Do not claim you have capabilities that are not provided by the available tools.
+
+AVAILABLE TOOLS:
+${JSON.stringify(availableTools, null, 2)}
+
+RESPONSE PROTOCOL:
+Return exactly one JSON object per response. Do not use Markdown fences.
+
+To call a tool:
+{"type":"tool_call","name":"TOOL_NAME","input":{}}
+
+To provide your final answer:
+{"type":"final","answer":"Your answer"}
+
+The tool_call name must exactly match a name in AVAILABLE TOOLS.
+The input must match that tool's inputSchema.
+Return only one tool call per response. After receiving the tool result, decide whether to call another tool or provide the final answer.
+Escape special characters such as quotation marks and newlines correctly inside JSON strings.
+
+Example tool call:
+{"type":"tool_call","name":"run_command","input":{"command":"free -h"}}
+
+Example final answer:
+{"type":"final","answer":"The command completed successfully."}`;
+}
+
 function parseAgentResponse(response: string): AgentResponse {
   const cleaned = response
     .trim()
@@ -68,51 +72,50 @@ function parseAgentResponse(response: string): AgentResponse {
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
 
-  // If there are no JSON brackets, it's a natural language final answer!
   if (start === -1 || end === -1 || end < start) {
-    return { type: "final", answer: cleaned };
+    throw new Error("Response did not contain a valid JSON object.");
   }
+
+  let parsed: unknown;
 
   try {
-    const parsed: unknown = JSON.parse(cleaned.slice(start, end + 1));
-
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "type" in parsed &&
-      parsed.type === "tool_call" &&
-      "name" in parsed &&
-      typeof parsed.name === "string" &&
-      "input" in parsed
-    ) {
-      return {
-        type: "tool_call",
-        name: parsed.name,
-        input: parsed.input,
-      };
-    }
-
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "type" in parsed &&
-      parsed.type === "final" &&
-      "answer" in parsed &&
-      typeof parsed.answer === "string"
-    ) {
-      return { type: "final", answer: parsed.answer };
-    }
+    parsed = JSON.parse(cleaned.slice(start, end + 1));
   } catch {
-    // If JSON parsing failed because of raw newlines in an answer:
-    if (!cleaned.includes('"tool_call"')) {
-      return { type: "final", answer: cleaned };
-    }
+    throw new Error("Response contained invalid JSON.");
   }
 
-  // Only throw an error if it attempted a tool call and broke the syntax
-  throw new Error("Invalid agent tool call format.");
-}
+  if (typeof parsed !== "object" || parsed === null) {
+    throw new Error("Response must be a JSON object.");
+  }
 
+  if (
+    "type" in parsed &&
+    parsed.type === "tool_call" &&
+    "name" in parsed &&
+    typeof parsed.name === "string" &&
+    "input" in parsed
+  ) {
+    return {
+      type: "tool_call",
+      name: parsed.name,
+      input: parsed.input,
+    };
+  }
+
+  if (
+    "type" in parsed &&
+    parsed.type === "final" &&
+    "answer" in parsed &&
+    typeof parsed.answer === "string"
+  ) {
+    return {
+      type: "final",
+      answer: parsed.answer,
+    };
+  }
+
+  throw new Error("Response did not match the required agent protocol.");
+}
 export async function runAgent(
   userRequest: string,
   registry: ToolRegistry,
@@ -120,7 +123,7 @@ export async function runAgent(
   const messages: ChatMessage[] = [
     {
       role: "system",
-      content: SYSTEM_PROMPT,
+      content: buildSystemPrompt(registry),
     },
     {
       role: "user",
@@ -130,6 +133,7 @@ export async function runAgent(
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
     const response = await generateResponse(messages);
+    console.log("\n[DEBUG] Raw model response:\n", response);
 
     messages.push({
       role: "assistant",
@@ -140,14 +144,18 @@ export async function runAgent(
 
     try {
       decision = parseAgentResponse(response);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
       messages.push({
         role: "user",
         content:
-          "Your previous response was not valid JSON in the required format. " +
-          'Return either {"type":"tool_call","name":"TOOL_NAME","input":{}} ' +
-          'or {"type":"final","answer":"Your answer"}.',
+          `Your previous response was invalid: ${message}\n` +
+          'Return exactly one valid JSON object: either {"type":"tool_call","name":"TOOL_NAME","input":{}} ' +
+          'or {"type":"final","answer":"Your answer"}. ' +
+          "For tool calls, use only a tool and input schema listed in the system prompt.",
       });
+
       continue;
     }
 
@@ -169,11 +177,16 @@ export async function runAgent(
       messages.push({
         role: "user",
         content:
-          `Tool "${decision.name}" failed:${message}\n` +
-          "Use this error to decide what to do next",
+          `Tool "${decision.name}" failed: ${message}\n` +
+          "Use this error to decide what to do next. " +
+          "Do not claim the operation succeeded.",
       });
     }
   }
 
-  return "I reached the maximum number of tool iterations. Please try a more specific request. ";
+  return (
+    `I reached the maximum of ${MAX_ITERATIONS} agent iterations ` +
+    "before completing the request. Some operations may have been performed; " +
+    "check the tool results before retrying."
+  );
 }
