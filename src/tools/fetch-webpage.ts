@@ -3,30 +3,32 @@ import type { FetchWebpageInput } from "../types/tool-types.js";
 const MAX_CONTENT_LENGTH = 5000;
 
 function cleanHtmlToText(html: string): string {
-  return html
-    // Remove scripts, styles, noscript, svg, nav, footer
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-    .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, "")
-    .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
-    .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, "")
-    .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, "")
-    // Convert headings and block tags to newlines
-    .replace(/<\/(h[1-6]|p|div|li|tr)>/gi, "\n")
-    .replace(/<br\s*\/?>/gi, "\n")
-    // Remove all remaining HTML tags
-    .replace(/<[^>]+>/g, "")
-    // Decode common HTML entities
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ")
-    // Clean up excessive whitespace
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n\n")
-    .trim();
+  return (
+    html
+      // Remove scripts, styles, noscript, svg, nav, footer
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+      .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, "")
+      .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, "")
+      .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, "")
+      .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, "")
+      // Convert headings and block tags to newlines
+      .replace(/<\/(h[1-6]|p|div|li|tr)>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      // Remove all remaining HTML tags
+      .replace(/<[^>]+>/g, "")
+      // Decode common HTML entities
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;|&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&nbsp;/g, " ")
+      // Clean up excessive whitespace
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s*\n+/g, "\n\n")
+      .trim()
+  );
 }
 
 export async function fetchWebpageTool(
@@ -98,4 +100,3 @@ export async function fetchWebpageTool(
     throw new Error(`Failed to fetch webpage "${rawUrl}": ${message}`);
   }
 }
-

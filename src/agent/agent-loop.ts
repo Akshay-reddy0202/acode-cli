@@ -126,12 +126,14 @@ function parseAgentResponse(response: string): AgentResponse {
 export async function runAgent(
   userRequest: string,
   registry: ToolRegistry,
+  sessionHistory: ChatMessage[] = [],
 ): Promise<string> {
   const messages: ChatMessage[] = [
     {
       role: "system",
       content: buildSystemPrompt(registry),
     },
+    ...sessionHistory,
     {
       role: "user",
       content: userRequest,

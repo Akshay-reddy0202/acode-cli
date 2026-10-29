@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
-import { runAgent } from "./agent/agent-loop.js";
+import { Conversation } from "./agent/conversation.js";
 import { createToolRegistry } from "./tools/tool-registration.js";
 import { createCliPermissionContext } from "./tools/permissions.js";
 
@@ -12,6 +12,7 @@ async function main(): Promise<void> {
 
   const permissionContext = createCliPermissionContext(rl);
   const registry = createToolRegistry(process.cwd(), permissionContext);
+  const conversation = new Conversation(registry);
 
   console.log("\n acode-cli");
   console.log("  Local AI coding assistant");
@@ -33,6 +34,12 @@ async function main(): Promise<void> {
         continue;
       }
 
+      if (trimmedPrompt === "/reset") {
+        conversation.clear();
+        console.log("Memory reset! Starting a fresh conversation.\n");
+        continue;
+      }
+
       if (!trimmedPrompt) {
         continue;
       }
@@ -40,7 +47,7 @@ async function main(): Promise<void> {
       try {
         console.log("\nThinking...\n");
 
-        const answer = await runAgent(trimmedPrompt, registry);
+        const answer = await conversation.send(trimmedPrompt);
 
         console.log(`AI: ${answer}\n`);
       } catch (error: unknown) {

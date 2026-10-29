@@ -34,10 +34,15 @@ The primary goal of this repository is to understand and implement:
 ## 🛠️ Implemented Architecture
 
 ```text
-User Input ──▶ [ CLI REPL ]
+User Input ──▶ [ CLI REPL in index.ts ] (Supports /reset, /clear, /exit)
+                    │
+                    ▼
+         [ Conversation Memory ] (Sliding window of last 2 distilled turns)
                     │
                     ▼
            [ ReAct Agent Loop ] ◀──────────┐
+                    │                      │
+       (SSE Token Streaming)               │
                     │                      │
         ┌───────────┴───────────┐          │
         ▼                       ▼          │
@@ -49,19 +54,31 @@ User Input ──▶ [ CLI REPL ]
                                 ▼          │
                         [ Tool Registry ]  │
                                 │          │
-                       (Execute in Sandbox)─┘
+            ┌───────────────────┴───────────────────┐
+            ▼                                       ▼
+   [ Filesystem Sandbox ]                  [ Network Tools ]
+   (read, write, edit, run)             (web_search, fetch_webpage)
+            │                                       │
+            └───────────────(Observation)───────────┘
 ```
 
 ---
 
 ## 🧰 Tools Implemented From Scratch
 
+### Filesystem & Terminal (Sandboxed):
+
 - `list_directory`: Workspace directory listing with path confinement.
-- `read_file`: Sandboxed file reading.
+- `read_file`: Sandboxed file reading preventing path-traversal attacks.
 - `find_files`: Recursive search with automatic exclusions (`node_modules`, `.git`, `dist`).
-- `write_file`: File creation with recursive directory building.
-- `edit_file`: Surgical exact-match snippet replacement.
-- `run_command`: Controlled Bash subprocess execution.
+- `write_file`: File creation with automatic parent directory generation.
+- `edit_file`: Surgical exact-match snippet replacement with uniqueness validation.
+- `run_command`: Controlled Bash subprocess execution with permission gates.
+
+### Web & Research (Zero External Dependencies):
+
+- `web_search`: Live DuckDuckGo search returning top titles, snippets, and clean destination URLs.
+- `fetch_webpage`: Direct HTTP webpage scraper that strips HTML, scripts, and ads into clean, context-safe readable text.
 
 ---
 
